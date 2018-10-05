@@ -31,15 +31,67 @@ struct CanvasCell {
 } canvas[30][30];
 void GotoXY (int x, int y);
 void SetColor (int BackgroundColor, int ForegroundColor);
-void ClearScreen ();
+void ClearScreen (int BackgroundColor = Color::Black, int ForegroundColor = Color::White);
 void DrawPixel (int x, int y, char c = ' ');
+void DrawFilledRectangle (int x1, int y1, int x2, int y2, char c = ' ');
 void AdjustScreenSize (int width, int height);
+void WriteTextXY (int x, int y, char * text);
+bool InRect (int x1, int y1, int x2, int y2, int x, int y);
 
 //#define TESTMODE
 namespace Canvas {
     void SaveToFile (int height, int width, CanvasCell** canvas, char* FileName);
     bool LoadFromFile (int &height, int &width, CanvasCell** canvas, char* FileName);
 }
+
+///Each section require: 16 X-coord and 9 Y-coord to init.
+///InitSection: Draw the graphics.
+///ChangeColor: Change to new color, update the graphics.
+struct BackgroundSection {
+    int x,y,currentColor;
+
+    ///Coordinates given relatively.
+    const int ButtonX1 [0x10] = {0, 4, 8, 0xC, 0, 4, 8, 0xC, 0, 4, 8, 0xC, 0, 4, 8, 0xC};
+    const int ButtonX2 [0x10] = {3, 7, 11, 15, 3, 7, 11, 15, 3, 7, 11, 15, 3, 7, 11, 15};
+    const int ButtonY1 [0x10] = {1, 1, 1, 1, 3, 3, 3, 3, 5, 5, 5, 5, 7, 7, 7, 7};
+    const int ButtonY2 [0x10] = {2, 2, 2, 2, 4, 4, 4, 4, 6, 6, 6, 6, 8, 8, 8, 8};
+
+    const int CursorX [0x10] = {1, 5, 9, 13, 1, 5, 9, 13, 1, 5, 9, 13, 1, 5, 9, 13};
+    const int CursorY [0x10] = {1, 1, 1, 1, 3, 3, 3, 3, 5, 5, 5, 5, 7, 7, 7, 7};
+
+    void InitSection (int topLeftX, int topLeftY);
+    void ChangeColor (int newColor);
+
+    ///"X" cursor, colored White if currentColor=Black, otherwise X cursor colored Black.
+    void UpdateCursor ();
+
+    ///If any button color pressed, return that color button,
+    ///Otherwise, return -1.
+    int ButtonPressed (int curX, int curY);
+};
+
+struct ForegroundSection {
+    int x,y,currentColor;
+
+    ///Coordinates given relatively.
+    const int ButtonX1 [0x10] = {0, 4, 8, 0xC, 0, 4, 8, 0xC, 0, 4, 8, 0xC, 0, 4, 8, 0xC};
+    const int ButtonX2 [0x10] = {3, 7, 11, 15, 3, 7, 11, 15, 3, 7, 11, 15, 3, 7, 11, 15};
+    const int ButtonY1 [0x10] = {1, 1, 1, 1, 3, 3, 3, 3, 5, 5, 5, 5, 7, 7, 7, 7};
+    const int ButtonY2 [0x10] = {2, 2, 2, 2, 4, 4, 4, 4, 6, 6, 6, 6, 8, 8, 8, 8};
+
+    const int CursorX [0x10] = {1, 5, 9, 13, 1, 5, 9, 13, 1, 5, 9, 13, 1, 5, 9, 13};
+    const int CursorY [0x10] = {1, 1, 1, 1, 3, 3, 3, 3, 5, 5, 5, 5, 7, 7, 7, 7};
+
+    void InitSection (int topLeftX, int topLeftY);
+    void ChangeColor (int newColor);
+
+    ///"X" cursor, colored White if currentColor=Black, otherwise X cursor colored Black.
+    void UpdateCursor ();
+
+    ///If any button color pressed, return that color button,
+    ///Otherwise, return -1.
+    int ButtonPressed (int curX, int curY);
+};
 
 int main (int argc, char ** argv) {
     #ifdef TESTMODE
@@ -54,12 +106,17 @@ int main (int argc, char ** argv) {
     #else
 
     char CurrentFileName[256] = "UNTITLED\0";
-    int height = 30, width = 30;
+    int height = 36, width = 80;
     AdjustScreenSize(width, height);
+    SetColor(Color::Black, Color::White);
     SetConsoleTitle(TitleCaption);
     ClearScreen();
+    printf("%d",15);
     bool isRunning = 1;
     INPUT_RECORD InputRecord;
+
+    BackgroundSection background; background.InitSection(width-18, 0);
+    ForegroundSection foreground; foreground.InitSection(width-18, 10);
 
     while (isRunning) {
 
@@ -76,17 +133,32 @@ void GotoXY (int x, int y) {
 void SetColor (int BackgroundColor, int ForegroundColor) {
     SetConsoleTextAttribute(hout, BackgroundColor*16+ForegroundColor);
 }
-void ClearScreen () {
-    FillConsoleOutputCharacter(hout, ' ', 9999, {0, 0}, NULL);
+void ClearScreen (int BackgroundColor, int ForegroundColor) {
+    int color = BackgroundColor * 16 + ForegroundColor;
+    DWORD written;
+    FillConsoleOutputCharacter(hout, ' ', 9999, {0, 0}, &written);
+    FillConsoleOutputAttribute(hout, color, 9999, {0, 0}, &written);
 }
 void DrawPixel (int x, int y, char c) {
     SetConsoleCursorPosition(hout, {x,y});
     printf("%c",c);
 }
+void WriteTextXY (int x, int y, char * text) {
+    GotoXY(x,y);
+    printf("%s",text);
+}
+void DrawFilledRectangle (int x1, int y1, int x2, int y2, char c) {
+    for (int x=x1; x<=x2; x++)
+        for (int y=y1; y<=y2; y++)
+            DrawPixel(x, y, c);
+}
 void AdjustScreenSize (int width, int height) {
     char cmd[128];
     sprintf(cmd,"mode %d,%d",width,height);
     system(cmd);
+}
+bool InRect (int x1, int y1, int x2, int y2, int x, int y) {
+    return (x>=x1 && x<=x2 && y>=y1 && y<=y2);
 }
 void Canvas::SaveToFile (int height, int width, CanvasCell** canvas, char* FileName) {
     FILE * hFile = fopen(FileName, "wb");
@@ -100,4 +172,85 @@ bool Canvas::LoadFromFile (int &height, int &width, CanvasCell** canvas, char* F
     fread(canvas,sizeof(CanvasCell),height*width,hFile);
     fclose(hFile);
     return 1;
+}
+void BackgroundSection::InitSection (int topLeftX, int topLeftY) {
+    x = topLeftX; y = topLeftY; currentColor = Color::White;
+    WriteTextXY (x, y, "BACKGROUND COLOR");
+    for (int color=0; color<16; color++) {
+        SetColor(color, Color::Black);
+        DrawFilledRectangle(x+ButtonX1[color],
+                            y+ButtonY1[color],
+                            x+ButtonX2[color],
+                            y+ButtonY2[color]);
+    }
+    UpdateCursor();
+}
+void BackgroundSection::ChangeColor (int newColor) {
+    ///Unchoose old color
+    SetColor(currentColor, Color::Black);
+    DrawFilledRectangle(x+ButtonX1[currentColor],
+                        y+ButtonY1[currentColor],
+                        x+ButtonX2[currentColor],
+                        y+ButtonY2[currentColor]);
+    currentColor = newColor;
+    UpdateCursor();
+}
+void BackgroundSection::UpdateCursor () {
+    int cursorColor = (currentColor == Color::Black) ? Color::White : Color::Black;
+    SetColor(currentColor, cursorColor);
+    DrawPixel(CursorX[currentColor], CursorY[currentColor], 'X');
+}
+///If any button color pressed, return that color button,
+///Otherwise, return -1.
+int BackgroundSection::ButtonPressed (int curX, int curY) {
+    for (int id=0; id<16; ++id)
+        if (InRect (x+ButtonX1[id],
+                    y+ButtonY1[id],
+                    x+ButtonX2[id],
+                    y+ButtonY2[id],
+                    curX,
+                    curY))
+            return id;
+    return -1;
+}
+void ForegroundSection::InitSection (int topLeftX, int topLeftY) {
+    x = topLeftX; y = topLeftY; currentColor = Color::White;
+    SetColor(Color::Black, Color::White);
+    WriteTextXY (x, y, "FOREGROUND COLOR");
+    for (int color=0; color<16; color++) {
+        SetColor(color, Color::Black);
+        DrawFilledRectangle(x+ButtonX1[color],
+                            y+ButtonY1[color],
+                            x+ButtonX2[color],
+                            y+ButtonY2[color]);
+    }
+}
+void ForegroundSection::ChangeColor (int newColor) {
+    ///Unchoose old color
+    SetColor(currentColor, Color::Black);
+    DrawFilledRectangle(x+ButtonX1[currentColor],
+                        y+ButtonY1[currentColor],
+                        x+ButtonX2[currentColor],
+                        y+ButtonY2[currentColor]);
+    currentColor = newColor;
+    UpdateCursor();
+}
+///"X" cursor, colored White if currentColor=Black, otherwise X cursor colored Black.
+void ForegroundSection::UpdateCursor () {
+    int cursorColor = (currentColor == Color::Black) ? Color::White : Color::Black;
+    SetColor(currentColor, cursorColor);
+    DrawPixel(CursorX[currentColor], CursorY[currentColor], 'X');
+}
+///If any button color pressed, return that color button,
+///Otherwise, return -1.
+int ForegroundSection::ButtonPressed (int curX, int curY) {
+    for (int id=0; id<16; ++id)
+        if (InRect (x+ButtonX1[id],
+                    y+ButtonY1[id],
+                    x+ButtonX2[id],
+                    y+ButtonY2[id],
+                    curX,
+                    curY))
+            return id;
+    return -1;
 }

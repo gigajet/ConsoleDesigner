@@ -40,6 +40,8 @@ bool InRect (int x1, int y1, int x2, int y2, int x, int y);
 
 //#define TESTMODE
 namespace Canvas {
+    int width, height;
+
     void SaveToFile (int height, int width, CanvasCell** canvas, char* FileName);
     bool LoadFromFile (int &height, int &width, CanvasCell** canvas, char* FileName);
 }
@@ -92,6 +94,21 @@ struct ForegroundSection {
     ///Otherwise, return -1.
     int ButtonPressed (int curX, int curY);
 };
+struct InstructSection {
+    int x, y;
+    void InitSection (int topLeftX, int topLeftY) {
+        x=topLeftX; y=topLeftY;
+        WriteInstruction();
+    }
+    void WriteInstruction () {
+        SetColor(Color::Black, Color::White);
+        WriteTextXY(x,y,"F1: New file");
+        WriteTextXY(x,y+1,"F2: Open file");
+        WriteTextXY(x,y+2,"F3: Save file");
+        WriteTextXY(x,y+3,"F4: Exit");
+        WriteTextXY(x,y+4,"F5: Resize canvas");
+    }
+};
 
 int main (int argc, char ** argv) {
     #ifdef TESTMODE
@@ -117,6 +134,7 @@ int main (int argc, char ** argv) {
 
     BackgroundSection background; background.InitSection(width-18, 0);
     ForegroundSection foreground; foreground.InitSection(width-18, 10);
+    InstructSection instruct; instruct.InitSection(width-18, 21);
 
     while (isRunning) {
 

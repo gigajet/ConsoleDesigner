@@ -174,7 +174,7 @@ bool Canvas::LoadFromFile (int &height, int &width, CanvasCell** canvas, char* F
     return 1;
 }
 void BackgroundSection::InitSection (int topLeftX, int topLeftY) {
-    x = topLeftX; y = topLeftY; currentColor = Color::White;
+    x = topLeftX; y = topLeftY; currentColor = Color::Black;
     WriteTextXY (x, y, "BACKGROUND COLOR");
     for (int color=0; color<16; color++) {
         SetColor(color, Color::Black);
@@ -198,7 +198,7 @@ void BackgroundSection::ChangeColor (int newColor) {
 void BackgroundSection::UpdateCursor () {
     int cursorColor = (currentColor == Color::Black) ? Color::White : Color::Black;
     SetColor(currentColor, cursorColor);
-    DrawPixel(CursorX[currentColor], CursorY[currentColor], 'X');
+    DrawPixel(x+CursorX[currentColor], y+CursorY[currentColor], 'X');
 }
 ///If any button color pressed, return that color button,
 ///Otherwise, return -1.
@@ -224,6 +224,7 @@ void ForegroundSection::InitSection (int topLeftX, int topLeftY) {
                             x+ButtonX2[color],
                             y+ButtonY2[color]);
     }
+    UpdateCursor();
 }
 void ForegroundSection::ChangeColor (int newColor) {
     ///Unchoose old color
@@ -239,7 +240,7 @@ void ForegroundSection::ChangeColor (int newColor) {
 void ForegroundSection::UpdateCursor () {
     int cursorColor = (currentColor == Color::Black) ? Color::White : Color::Black;
     SetColor(currentColor, cursorColor);
-    DrawPixel(CursorX[currentColor], CursorY[currentColor], 'X');
+    DrawPixel(x+CursorX[currentColor], y+CursorY[currentColor], 'X');
 }
 ///If any button color pressed, return that color button,
 ///Otherwise, return -1.

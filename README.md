@@ -2,7 +2,7 @@
 
 A very fist version of simple console designer. Use mouse to draw.
 Requirements:
-Windows >= XP and Windows <= Win10.
+Windows >= XP and Windows < Win8.
 Screen resolution >= 1366 x 768.
 (1024 x 768 still OK, but you may need to resize the canvas to be smaller).
 

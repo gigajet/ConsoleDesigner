@@ -6,8 +6,8 @@
 const HANDLE hin = GetStdHandle(STD_INPUT_HANDLE);
 const HANDLE hout = GetStdHandle(STD_OUTPUT_HANDLE);
 const char * TitleCaption = "Console Designer 0.1";
-const int MAX_CANVAS_WIDTH = 110;
-const int MAX_CANVAS_HEIGHT = 35;
+const int MAX_CANVAS_WIDTH = 120;
+const int MAX_CANVAS_HEIGHT = 36;
 namespace Color {
     const int Black = 0,
               Blue  = 1,
@@ -150,6 +150,7 @@ int main (int argc, char ** argv) {
     cursorInfo.bVisible = false; cursorInfo.dwSize = 100;
     SetConsoleCursorInfo(hout, &cursorInfo);
 
+    SetConsoleMode(hin, ENABLE_EXTENDED_FLAGS);
     SetConsoleMode(hin, ENABLE_PROCESSED_INPUT | ENABLE_MOUSE_INPUT);
     ///Default color and caption
     SetColor(Color::Black, Color::White);

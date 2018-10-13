@@ -11,3 +11,5 @@ Use \<Ascii code><Enter> to change to special code. E.g: \6<Enter> or \102<Enter
 
 # Considering doing in future:
 * "Fill" the canvas with background.
+
+#Update 13/10/2018: support for win10.
